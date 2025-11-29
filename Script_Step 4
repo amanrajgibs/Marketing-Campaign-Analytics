@@ -1,0 +1,42 @@
+4. Time Series Forecasting and Seasonality Analysis
+
+import pandas as pd
+from statsmodels.tsa.seasonal import seasonal_decompose
+import matplotlib.pyplot as plt
+
+# Load and clean the Date column
+df = pd.read_csv('marketing_campaign_dataset.csv')
+df['Date'] = pd.to_datetime(df['Date'], format='%d-%m-%Y')
+
+# --- Program for Goal 3: Time Series Forecasting and Seasonality Analysis ---
+
+# 1. Aggregate data to a daily time series for mean ROI
+time_series_data = df.groupby('Date')['ROI'].mean().reset_index()
+
+# Set Date as the index for time series analysis
+time_series_data.set_index('Date', inplace=True)
+
+# 2. Resample to weekly data for smoother analysis
+weekly_ts = time_series_data['ROI'].resample('W').mean().dropna()
+
+# 3. Perform seasonal decomposition
+# Model='additive' is used for demonstration. We use period=4 to approximate
+# monthly cycles, as there is insufficient data for a full annual (period=52) decomposition.
+try:
+    decomposition = seasonal_decompose(weekly_ts, model='additive', period=4)
+
+    # 4. Plot the decomposition components
+    fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(15, 12), sharex=True)
+
+    decomposition.observed.plot(ax=ax1, title='Observed ROI (Weekly)')
+    decomposition.trend.plot(ax=ax2, title='Trend Component')
+    decomposition.seasonal.plot(ax=ax3, title='Seasonal Component (4-Week Period)')
+    decomposition.resid.plot(ax=ax4, title='Residual Component')
+
+    plt.xlabel("Date")
+    plt.tight_layout()
+    plt.savefig('roi_time_series_decomposition_monthly_approx.png')
+    plt.close()
+
+except Exception as e:
+    print(f"Error: {e}")
