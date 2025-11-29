@@ -1,0 +1,43 @@
+2. Advanced Analysis: Cross-Channel Efficiency Frontier
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Re-load and clean the necessary columns (assuming the data has been cleaned as in Program 1)
+df = pd.read_csv('marketing_campaign_dataset.csv')
+df['Acquisition_Cost'] = df['Acquisition_Cost'].replace({'\$': '', ',': ''}, regex=True).astype(float)
+
+# --- 1. Cross-Channel Efficiency Frontier Analysis ---
+print("--- Starting Cross-Channel Efficiency Frontier Analysis ---")
+
+# Group by Channel_Used and calculate the mean ROI and mean Acquisition Cost
+frontier_data = df.groupby('Channel_Used').agg(
+    Mean_ROI=('ROI', 'mean'),
+    Mean_Cost=('Acquisition_Cost', 'mean')
+).reset_index()
+
+# Sort by Mean_Cost to help visualize the frontier
+frontier_data = frontier_data.sort_values(by='Mean_Cost')
+
+plt.figure(figsize=(12, 8))
+plt.scatter(frontier_data['Mean_Cost'], frontier_data['Mean_ROI'], s=frontier_data['Mean_Cost']/10, alpha=0.7, c=frontier_data['Mean_ROI'], cmap='coolwarm')
+
+# Label each channel point
+for i in range(len(frontier_data)):
+    plt.annotate(
+        frontier_data['Channel_Used'].iloc[i],
+        (frontier_data['Mean_Cost'].iloc[i] + 100, frontier_data['Mean_ROI'].iloc[i]),
+        fontsize=9
+    )
+
+plt.title('Cross-Channel Efficiency Frontier: ROI vs. Cost', fontsize=16)
+plt.xlabel('Average Acquisition Cost (USD)', fontsize=12)
+plt.ylabel('Average ROI', fontsize=12)
+plt.colorbar(label='Average ROI')
+plt.grid(True, linestyle='--', alpha=0.6)
+plt.tight_layout()
+plt.savefig('efficiency_frontier_analysis.png')
+print("Saved: efficiency_frontier_analysis.png")
+plt.close()
+
+print("The plot identifies channels on the upper-left (high ROI for lower cost) as the 'Efficient Frontier'.")
