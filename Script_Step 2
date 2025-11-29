@@ -1,43 +1,29 @@
-2. Advanced Analysis: Cross-Channel Efficiency Frontier
+# --- 3. EXPLORATORY DATA ANALYSIS (EDA) ---
+print("\n--- 3. Exploratory Data Analysis (EDA) ---")
 
-import pandas as pd
-import matplotlib.pyplot as plt
+# 3.1 Overall Performance Metrics
+print("\nOverall Performance Summary (Mean):")
+performance_summary = df[['Conversion_Rate', 'ROI', 'Acquisition_Cost_USD', 'Clicks', 'Impressions']].mean()
+print(performance_summary.to_frame().T)
 
-# Re-load and clean the necessary columns (assuming the data has been cleaned as in Program 1)
-df = pd.read_csv('marketing_campaign_dataset.csv')
-df['Acquisition_Cost'] = df['Acquisition_Cost'].replace({'\$': '', ',': ''}, regex=True).astype(float)
+# 3.2 Channel Performance Analysis
+channel_performance = df.groupby('Channel_Used').agg(
+    Total_Spend=('Acquisition_Cost_USD', 'sum'),
+    Avg_ROI=('ROI', 'mean'),
+    Avg_Conversion_Rate=('Conversion_Rate', 'mean'),
+    Total_Clicks=('Clicks', 'sum')
+).sort_values(by='Total_Spend', ascending=False)
+print("\nChannel Performance Summary:")
+print(channel_performance)
 
-# --- 1. Cross-Channel Efficiency Frontier Analysis ---
-print("--- Starting Cross-Channel Efficiency Frontier Analysis ---")
-
-# Group by Channel_Used and calculate the mean ROI and mean Acquisition Cost
-frontier_data = df.groupby('Channel_Used').agg(
-    Mean_ROI=('ROI', 'mean'),
-    Mean_Cost=('Acquisition_Cost', 'mean')
-).reset_index()
-
-# Sort by Mean_Cost to help visualize the frontier
-frontier_data = frontier_data.sort_values(by='Mean_Cost')
-
-plt.figure(figsize=(12, 8))
-plt.scatter(frontier_data['Mean_Cost'], frontier_data['Mean_ROI'], s=frontier_data['Mean_Cost']/10, alpha=0.7, c=frontier_data['Mean_ROI'], cmap='coolwarm')
-
-# Label each channel point
-for i in range(len(frontier_data)):
-    plt.annotate(
-        frontier_data['Channel_Used'].iloc[i],
-        (frontier_data['Mean_Cost'].iloc[i] + 100, frontier_data['Mean_ROI'].iloc[i]),
-        fontsize=9
-    )
-
-plt.title('Cross-Channel Efficiency Frontier: ROI vs. Cost', fontsize=16)
-plt.xlabel('Average Acquisition Cost (USD)', fontsize=12)
-plt.ylabel('Average ROI', fontsize=12)
-plt.colorbar(label='Average ROI')
-plt.grid(True, linestyle='--', alpha=0.6)
-plt.tight_layout()
-plt.savefig('efficiency_frontier_analysis.png')
-print("Saved: efficiency_frontier_analysis.png")
-plt.close()
-
-print("The plot identifies channels on the upper-left (high ROI for lower cost) as the 'Efficient Frontier'.")
+# Visualization: Channel Spend vs. ROI
+plt.figure(figsize=(10, 6))
+sns.scatterplot(x='Total_Spend', y='Avg_ROI', hue=channel_performance.index, data=channel_performance, s=100)
+plt.title('Channel Spend vs. Average ROI')
+plt.xlabel('Total Spend (USD)')
+plt.ylabel('Average ROI')
+plt.xscale('log')
+plt.legend(bbox_to_anchor=(1.05, 1), loc=2)
+plt.grid(True)
+plt.savefig('channel_performance.png')
+print("Saved 'channel_performance.png' chart.")
