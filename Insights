@@ -1,0 +1,28 @@
+
+The channel with the highest Mean ROI -Organic
+The channel with the lowest Mean Cost (assuming lower cost is better) - Social media
+The channel with the highest Mean Cost (assuming higher cost is worse) - paid search
+The channel with the lowest Mean ROI - Social media
+--- Starting Predictive Modeling Setup ---
+Features (X) shape after one-hot encoding: (1000, 13)
+Training set size: 800 campaigns
+Test set size: 200 campaigns
+
+Model Performance (RMSE on Test Set): 0.3045
+Coefficients of the model (Top 5):
+|                 |            0 |
+|:----------------|-------------:|
+| conversions     |  0.0689898   |
+| channel_Organic |  0.0214686   |
+| churn           |  0.0183651   |
+| revenue         |  0.00236736  |
+| customer_age    | -0.000492896 |
+
+--- Starting Cross-Factor Interaction Analysis (T-Test Template) ---
+Comparison: Awareness vs. Action for Customer Age 35
+Mean Conversion Rate (Awareness): 0.0048
+Mean Conversion Rate (Action): 0.0078
+T-statistic: -0.3680, P-value: 0.7666
+Conclusion: The difference in Conversion Rate is **not statistically significant** (p >= 0.05).
+These insights help us understand which channels are performing best and worst in terms of ROI and cost efficiency, providing valuable information for optimizing marketing strategies.
+
