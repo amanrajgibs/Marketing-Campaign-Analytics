@@ -1,78 +1,37 @@
-1. Data Cleaning and Exploratory Data Analysis (EDA)
+1. Data Cleaning and Preparation
 
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
 
-# Set the style for plots
-sns.set_style("whitegrid")
+# --- 1. CONFIGURATION ---
 
-# --- 1. Data Cleaning and Preparation ---
-print("--- Starting Data Cleaning and Preparation ---")
-df = pd.read_csv('marketing_campaign_dataset.csv')
+# The file name of your uploaded dataset
+FILE_NAME = "marketing_campaign_dataset.csv"
 
-# 1.1 Clean 'Acquisition_Cost': Remove '$' and ',', convert to float
-df['Acquisition_Cost'] = df['Acquisition_Cost'].replace({'\$': '', ',': ''}, regex=True).astype(float)
+# --- 2. DATA LOADING AND CLEANING ---
 
-# 1.2 Convert 'Date' to datetime objects
-df['Date'] = pd.to_datetime(df['Date'], format='%d-%m-%Y')
+def load_and_clean_data(file_path):
+    """Loads the CSV, cleans the 'Acquisition_Cost', and formats 'Date'."""
+    try:
+        df = pd.read_csv(file_path)
+    except FileNotFoundError:
+        print(f"Error: File not found at {file_path}. Please ensure the file is uploaded to Colab.")
+        return None
 
-# 1.3 Extract numerical duration for modeling (e.g., '30 days' -> 30)
-df['Duration_Days'] = df['Duration'].str.extract('(\d+)').astype(int)
+    # Convert Acquisition_Cost to a float by removing '$' and ','
+    df['Acquisition_Cost'] = (
+        df['Acquisition_Cost']
+        .astype(str) # Ensure it's a string before manipulation
+        .str.replace('$', '', regex=False)
+        .str.replace(',', '', regex=False)
+        .astype(float)
+    )
 
-print("Data types after cleaning:")
-print(df.info())
-print("\nFirst 5 rows after cleaning:")
-print(df.head().to_markdown(index=False))
+    # Convert Date to datetime object for time series analysis
+    # Assuming 'DD-MM-YYYY' format based on inspection
+    df['Date'] = pd.to_datetime(df['Date'], format='%d-%m-%Y', errors='coerce')
+    df = df.dropna(subset=['Date']) # Drop rows where date conversion failed
 
-# --- 2. Exploratory Data Analysis (EDA) ---
-print("\n--- Starting Exploratory Data Analysis (EDA) ---")
-
-# 2.1 Distribution of Key Numerical Metrics (ROI and Conversion Rate)
-plt.figure(figsize=(14, 5))
-
-plt.subplot(1, 2, 1)
-sns.histplot(df['ROI'], kde=True, bins=30, color='skyblue')
-plt.title('Distribution of ROI', fontsize=14)
-plt.xlabel('Return on Investment (ROI)')
-plt.ylabel('Frequency')
-
-plt.subplot(1, 2, 2)
-sns.histplot(df['Conversion_Rate'], kde=True, bins=30, color='salmon')
-plt.title('Distribution of Conversion Rate', fontsize=14)
-plt.xlabel('Conversion Rate')
-plt.ylabel('Frequency')
-
-plt.tight_layout()
-plt.savefig('eda_distribution_plots.png')
-print("Saved: eda_distribution_plots.png")
-plt.close()
-
-# 2.2 Performance by Channel Used (Mean ROI)
-channel_performance = df.groupby('Channel_Used')['ROI'].mean().sort_values(ascending=False).reset_index()
-
-plt.figure(figsize=(10, 6))
-sns.barplot(x='ROI', y='Channel_Used', data=channel_performance, palette='viridis')
-plt.title('Average ROI by Channel Used', fontsize=14)
-plt.xlabel('Average ROI')
-plt.ylabel('Channel Used')
-plt.tight_layout()
-plt.savefig('eda_channel_performance.png')
-print("Saved: eda_channel_performance.png")
-plt.close()
-
-# 2.3 Performance by Target Audience (Mean Acquisition Cost)
-audience_cost = df.groupby('Target_Audience')['Acquisition_Cost'].mean().sort_values(ascending=False).reset_index()
-
-plt.figure(figsize=(10, 6))
-sns.barplot(x='Acquisition_Cost', y='Target_Audience', data=audience_cost, palette='plasma')
-plt.title('Average Acquisition Cost by Target Audience', fontsize=14)
-plt.xlabel('Average Acquisition Cost (USD)')
-plt.ylabel('Target Audience')
-plt.tight_layout()
-plt.savefig('eda_audience_cost.png')
-print("Saved: eda_audience_cost.png")
-plt.close()
-
-print("\nEDA complete. Review the generated plots for insights.")
+    print("Data loaded and cleaned successfully.")
+    print(f"Total records: {len(df)}")
+    return df
