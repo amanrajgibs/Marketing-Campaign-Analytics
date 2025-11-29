@@ -1,42 +1,91 @@
-4. Time Series Forecasting and Seasonality Analysis
+# --- 4. CUSTOMER SEGMENTATION ANALYSIS ---
 
-import pandas as pd
-from statsmodels.tsa.seasonal import seasonal_decompose
-import matplotlib.pyplot as plt
+def analyze_customer_segmentation(df):
+    """Calculates average metrics for each customer segment."""
+    print("\n--- 4. Analyzing Customer Segmentation ---")
 
-# Load and clean the Date column
-df = pd.read_csv('marketing_campaign_dataset.csv')
-df['Date'] = pd.to_datetime(df['Date'], format='%d-%m-%Y')
+    segment_performance = df.groupby('Customer_Segment').agg(
+        Average_ROI=('ROI', 'mean'),
+        Total_Acquisition_Cost=('Acquisition_Cost', 'sum'),
+        Average_Engagement_Score=('Engagement_Score', 'mean'),
+        Average_Conversion_Rate=('Conversion_Rate', 'mean'),
+        Count_Campaigns=('Campaign_ID', 'count')
+    ).reset_index()
 
-# --- Program for Goal 3: Time Series Forecasting and Seasonality Analysis ---
+    # Sort by Average ROI to identify high-value segments
+    segment_performance = segment_performance.sort_values(by='Average_ROI', ascending=False)
 
-# 1. Aggregate data to a daily time series for mean ROI
-time_series_data = df.groupby('Date')['ROI'].mean().reset_index()
+    # Save to CSV for dashboard integration
+    segment_performance.to_csv('customer_segmentation_summary.csv', index=False)
 
-# Set Date as the index for time series analysis
-time_series_data.set_index('Date', inplace=True)
+    return segment_performance
 
-# 2. Resample to weekly data for smoother analysis
-weekly_ts = time_series_data['ROI'].resample('W').mean().dropna()
+# --- 5. ACTIONABLE BUDGET RECOMMENDATIONS & EXECUTIVE DASHBOARD PREP ---
 
-# 3. Perform seasonal decomposition
-# Model='additive' is used for demonstration. We use period=4 to approximate
-# monthly cycles, as there is insufficient data for a full annual (period=52) decomposition.
-try:
-    decomposition = seasonal_decompose(weekly_ts, model='additive', period=4)
+def generate_recommendations(channel_df, segment_df):
+    """Generates high-level, actionable budget recommendations."""
+    print("\n--- 5. Actionable Budget Recommendations & Dashboard Prep ---")
 
-    # 4. Plot the decomposition components
-    fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(15, 12), sharex=True)
+    # Budget recommendation based on Channel ROI
+    best_channel = channel_df.iloc[0]['Channel_Used']
+    best_channel_roi = channel_df.iloc[0]['Average_ROI']
+    recommendation_channel = (
+        f"**Recommendation 1 (Channel Focus):** "
+        f"Increase budget allocation to the **{best_channel}** channel, "
+        f"which shows the highest average ROI of **{best_channel_roi:.2f}**."
+    )
 
-    decomposition.observed.plot(ax=ax1, title='Observed ROI (Weekly)')
-    decomposition.trend.plot(ax=ax2, title='Trend Component')
-    decomposition.seasonal.plot(ax=ax3, title='Seasonal Component (4-Week Period)')
-    decomposition.resid.plot(ax=ax4, title='Residual Component')
+    # Budget recommendation based on Customer Segment ROI
+    best_segment = segment_df.iloc[0]['Customer_Segment']
+    best_segment_roi = segment_df.iloc[0]['Average_ROI']
+    recommendation_segment = (
+        f"**Recommendation 2 (Audience Focus):** "
+        f"Prioritize campaigns targeting the **{best_segment}** segment, "
+        f"which yields the highest average ROI of **{best_segment_roi:.2f}**. "
+        f"Test shifting spend from low-ROI segments to this high-value group."
+    )
 
-    plt.xlabel("Date")
-    plt.tight_layout()
-    plt.savefig('roi_time_series_decomposition_monthly_approx.png')
-    plt.close()
+    # Experimentation Framework Design insight (based on poor performers)
+    # Identify the channel with the lowest ROI for an A/B test
+    worst_channel = channel_df.iloc[-1]['Channel_Used']
+    worst_channel_roi = channel_df.iloc[-1]['Average_ROI']
+    recommendation_experiment = (
+        f"**Experimentation Framework Insight:** "
+        f"Design an A/B test for campaigns running on the **{worst_channel}** channel "
+        f"(Lowest ROI: {worst_channel_roi:.2f}). "
+        f"Test a new ad creative or targeting strategy against the current approach "
+        f"to improve performance."
+    )
 
-except Exception as e:
-    print(f"Error: {e}")
+    print("\n**HIGH-LEVEL BUDGET AND STRATEGY RECOMMENDATIONS**")
+    print("--------------------------------------------------")
+    print(recommendation_channel)
+    print(recommendation_segment)
+    print(recommendation_experiment)
+    print("--------------------------------------------------")
+
+# --- 6. MAIN EXECUTION ---
+
+if __name__ == "__main__":
+    df = load_and_clean_data(FILE_NAME)
+
+    if df is not None:
+        # 1. Run MTA Proxy Analysis
+        channel_df = analyze_channel_performance(df)
+        print("\n**Channel Performance Summary (for Executive Dashboard)**")
+        print("File saved as **channel_performance_summary.csv**")
+        print(channel_df)
+
+        # 2. Run Segmentation Analysis
+        segment_df = analyze_customer_segmentation(df)
+        print("\n**Customer Segmentation Summary (for Executive Dashboard)**")
+        print("File saved as **customer_segmentation_summary.csv**")
+        print(segment_df)
+
+        # 3. Generate Actionable Recommendations
+        generate_recommendations(channel_df, segment_df)
+
+# --- ADVANCED FRAMEWORK NOTES (For Data-Driven Campaign Testing and Scaling) ---
+
+
+"""
