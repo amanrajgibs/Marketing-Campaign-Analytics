@@ -1,76 +1,27 @@
-3. Advanced Analysis: Predictive Modeling and Interaction Effects Setup
+# --- 3. MULTI-TOUCH ATTRIBUTION PROXY & CHANNEL PERFORMANCE ---
 
-import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error
-from scipy import stats
+def analyze_channel_performance(df):
+    """Calculates key performance metrics by marketing channel."""
+    print("\n--- 3. Analyzing Channel Performance (MTA Proxy) ---")
 
-# Re-load and clean the necessary columns (assuming the data has been cleaned as in Program 1)
-df = pd.read_csv('marketing_campaign_dataset.csv')
-df['Acquisition_Cost'] = df['Acquisition_Cost'].replace({'\$': '', ',': ''}, regex=True).astype(float)
-df['Duration_Days'] = df['Duration'].str.extract('(\d+)').astype(int)
+    channel_performance = df.groupby('Channel_Used').agg(
+        Total_Acquisition_Cost=('Acquisition_Cost', 'sum'),
+        Average_ROI=('ROI', 'mean'),
+        Average_Conversion_Rate=('Conversion_Rate', 'mean'),
+        Total_Impressions=('Impressions', 'sum'),
+        Total_Clicks=('Clicks', 'sum'),
+        Count_Campaigns=('Campaign_ID', 'count')
+    ).reset_index()
 
-# --- 1. Predictive Modeling for Campaign Outcomes (Setup) ---
-print("--- Starting Predictive Modeling Setup ---")
+    # Calculate **Cost per Impression** (key optimization metric)
+    channel_performance['Cost_Per_Impression'] = (
+        channel_performance['Total_Acquisition_Cost'] / channel_performance['Total_Impressions']
+    )
 
-# Define Target Variable (Y) and Features (X)
-target_variable = 'ROI'
-features = ['Campaign_Type', 'Target_Audience', 'Channel_Used', 'Acquisition_Cost', 
-            'Clicks', 'Impressions', 'Engagement_Score', 'Duration_Days']
+    # Sort by Average ROI for budget recommendation insight
+    channel_performance = channel_performance.sort_values(by='Average_ROI', ascending=False)
 
-X = df[features]
-y = df[target_variable]
+    # Save to CSV for dashboard integration
+    channel_performance.to_csv('channel_performance_summary.csv', index=False)
 
-# One-Hot Encode Categorical Variables
-X = pd.get_dummies(X, drop_first=True)
-
-# Split data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-print(f"Features (X) shape after one-hot encoding: {X.shape}")
-print(f"Training set size: {X_train.shape[0]} campaigns")
-print(f"Test set size: {X_test.shape[0]} campaigns")
-
-# Initialize and Train the Model (Simple Linear Regression Example)
-model = LinearRegression()
-model.fit(X_train, y_train)
-
-# Predict and Evaluate
-y_pred = model.predict(X_test)
-rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-
-print(f"\nModel Performance (RMSE on Test Set): {rmse:.4f}")
-print("Coefficients of the model (Top 5):")
-# Create a series of feature importance
-coefficients = pd.Series(model.coef_, X_train.columns).sort_values(ascending=False).head(5)
-print(coefficients.to_markdown())
-
-# --- 2. Cross-Factor Performance Interaction Analysis (T-Test Template) ---
-print("\n--- Starting Cross-Factor Interaction Analysis (T-Test Template) ---")
-
-# Example: Test if 'Email' campaigns are significantly different from 'Social Media' 
-# ONLY within the 'Women 35-44' Target Audience.
-
-# Filter data for a specific segment
-segment_df = df[df['Target_Audience'] == 'Women 35-44']
-
-# Separate the two campaign types for comparison
-group_A = segment_df[segment_df['Campaign_Type'] == 'Email']['Conversion_Rate']
-group_B = segment_df[segment_df['Campaign_Type'] == 'Social Media']['Conversion_Rate']
-
-if len(group_A) > 1 and len(group_B) > 1:
-    # Perform a two-sample independent t-test
-    t_stat, p_value = stats.ttest_ind(group_A, group_B, equal_var=False)
-
-    print(f"Comparison: Email vs. Social Media for Target Audience 'Women 35-44'")
-    print(f"Mean Conversion Rate (Email): {group_A.mean():.4f}")
-    print(f"Mean Conversion Rate (Social Media): {group_B.mean():.4f}")
-    print(f"T-statistic: {t_stat:.4f}, P-value: {p_value:.4f}")
-
-    if p_value < 0.05:
-        print("Conclusion: The difference in Conversion Rate is **statistically significant** (p < 0.05).")
-    else:
-        print("Conclusion: The difference in Conversion Rate is **not statistically significant** (p >= 0.05).")
-else:
-    print("Not enough data points in one or both groups to perform the t-test for this specific interaction.")
+    return channel_performance
